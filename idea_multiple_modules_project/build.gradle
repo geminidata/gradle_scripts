@@ -1,0 +1,35 @@
+apply plugin: 'idea'
+
+import org.gradle.plugins.ide.idea.model.Path
+
+subprojects {
+    apply plugin: 'idea'
+
+    idea.module {
+        /* custom folders by case */
+        sourceDirs += files('src')
+        testSourceDirs += files('tests')
+        excludeDirs += files('build')
+
+        iml {
+            /**
+             idea.module.testSourceDirs not working in IDEA 2017.1.5
+
+             The below workaround is able to modify iml XML directly to specifiy custom test source folders.
+             After `gradle idea`, then open project from IDEA. After importing Gradle, the source folders will be gone. Need to `grade idea` again.
+             Then, the IDEA will refresh automatically to recognize correct (test) source folders.
+            
+            */
+            beforeMerged { module ->
+                module.testSourceFolders += idea.module.testSourceDirs.collect {
+                    new Path("file://\$MODULE_DIR\$/$it.name")
+                }
+            }
+        }
+    }
+}
+
+idea.project {
+    /* Exclude the root project from module to make flat modules view in project view */
+    modules = modules.findAll { it.name != name }
+}
